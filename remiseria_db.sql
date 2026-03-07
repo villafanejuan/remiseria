@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 06-03-2026 a las 03:39:00
+-- Tiempo de generación: 07-03-2026 a las 17:47:04
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -24,6 +24,23 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `notificaciones`
+--
+
+CREATE TABLE `notificaciones` (
+  `id` int(11) NOT NULL,
+  `id_usuario` int(11) NOT NULL,
+  `titulo` varchar(150) NOT NULL,
+  `mensaje` text NOT NULL,
+  `tipo` enum('info','success','warning','danger') DEFAULT 'info',
+  `leida` tinyint(1) DEFAULT 0,
+  `link` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `pasajeros`
 --
 
@@ -35,13 +52,6 @@ CREATE TABLE `pasajeros` (
   `direccion` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `pasajeros`
---
-
-INSERT INTO `pasajeros` (`id`, `apellido`, `nombre`, `telefono`, `direccion`, `created_at`) VALUES
-(4, 'juanjo', '', '123412', '343546', '2026-03-05 12:10:59');
 
 -- --------------------------------------------------------
 
@@ -92,16 +102,15 @@ CREATE TABLE `viajes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Volcado de datos para la tabla `viajes`
---
-
-INSERT INTO `viajes` (`id`, `id_remisero`, `id_pasajero`, `tipo`, `origen`, `destino`, `fecha_hora_solicitado`, `fecha_hora_viaje`, `estado`, `observaciones`, `monto`, `metodo_pago`, `fecha_pago`, `created_at`) VALUES
-(9, 2, 4, 'local', 'callefalsa123', '-', '2026-03-05 09:10:59', NULL, 'completado', '', 3000.00, 'transferencia', '2026-03-05 09:15:00', '2026-03-05 12:10:59'),
-(10, 2, 4, 'local', '-', '-', '2026-03-05 10:02:07', NULL, 'buscando', '', 0.00, 'pendiente', NULL, '2026-03-05 13:02:07');
-
---
 -- Índices para tablas volcadas
 --
+
+--
+-- Indices de la tabla `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `id_usuario` (`id_usuario`);
 
 --
 -- Indices de la tabla `pasajeros`
@@ -127,6 +136,12 @@ ALTER TABLE `viajes`
 --
 -- AUTO_INCREMENT de las tablas volcadas
 --
+
+--
+-- AUTO_INCREMENT de la tabla `notificaciones`
+--
+ALTER TABLE `notificaciones`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT de la tabla `pasajeros`
