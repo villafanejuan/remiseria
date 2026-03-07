@@ -1,9 +1,12 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../config/notificaciones.php';
 authRedirect();
 
 $pdo = getConnection();
+$id_usuario = $_SESSION['user_id'];
+handle_notificaciones($pdo, $id_usuario);
 $message = '';
 $remisero_id = $_SESSION['user_id'];
 
@@ -28,6 +31,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $stmt = $pdo->prepare('INSERT INTO viajes (id_remisero, id_pasajero, tipo, origen, destino, estado) VALUES (?, ?, "local", "-", "-", "buscando")');
         $stmt->execute([$remisero_id, $id_pasajero]);
+        
+        $stmt_pasajero = $pdo->prepare('SELECT nombre, apellido FROM pasajeros WHERE id = ?');
+        $stmt_pasajero->execute([$id_pasajero]);
+        $pasajero = $stmt_pasajero->fetch();
+        
+        $stmt_admin = $pdo->query('SELECT id FROM remiseros WHERE rol = "admin" LIMIT 1')->fetch();
+        if ($stmt_admin) {
+            crear_notificacion($pdo, $stmt_admin['id'], 'Nuevo viaje', $_SESSION['nombre'] . ' inició un viaje con ' . $pasajero['apellido'] . ' ' . $pasajero['nombre'], 'info');
+        }
+        
         $message = 'Viaje registrado. Cuando busques al pasajero, marcá "En Curso".';
         $pasajeros = $pdo->query("SELECT p.* FROM pasajeros p 
             LEFT JOIN viajes v ON p.id = v.id_pasajero AND v.estado IN ('buscando', 'en_curso') 
@@ -58,7 +71,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="top-bar">
         <div class="container d-flex justify-content-between align-items-center">
             <div><a href="index.php" class="text-white text-decoration-none"><i class="bi bi-arrow-left"></i></a> <strong class="ms-3">Nuevo Viaje</strong></div>
-            <div><span class="me-3"><?= htmlspecialchars($_SESSION['nombre']) ?></span><a href="../logout.php" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right"></i></a></div>
+            <div>
+                <?php render_notificaciones($pdo, $id_usuario); ?>
+                <span class="me-3"><?= htmlspecialchars($_SESSION['nombre']) ?></span>
+                <a href="perfil.php" class="btn btn-sm btn-outline-light"><i class="bi bi-gear"></i></a>
+                <a href="../logout.php" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right"></i></a>
+            </div>
         </div>
     </div>
     <div class="container mt-4">
@@ -123,5 +141,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

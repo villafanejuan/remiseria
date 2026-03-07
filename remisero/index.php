@@ -1,9 +1,12 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../config/notificaciones.php';
 authRedirect();
 
 $pdo = getConnection();
+$id_usuario = $_SESSION['user_id'];
+handle_notificaciones($pdo, $id_usuario);
 
 $stmt = $pdo->prepare('SELECT COUNT(*) as total FROM viajes WHERE id_remisero = ? AND DATE(created_at) = CURDATE()');
 $stmt->execute([$_SESSION['user_id']]);
@@ -43,7 +46,8 @@ $mis_viajes = $stmt->fetchAll();
     <div class="top-bar">
         <div class="container d-flex justify-content-between align-items-center">
             <div><i class="bi bi-car-front-fill fs-4 me-2"></i> <strong>Remisería</strong></div>
-            <div>
+<div>
+                <?php render_notificaciones($pdo, $id_usuario); ?>
                 <span class="me-3"><?= htmlspecialchars($_SESSION['nombre']) ?></span>
                 <a href="perfil.php" class="btn btn-sm btn-outline-light"><i class="bi bi-gear"></i></a>
                 <a href="../logout.php" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right"></i></a>
@@ -117,6 +121,7 @@ $mis_viajes = $stmt->fetchAll();
                 </div>
             </div>
         </div>
-    </div>
+</div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

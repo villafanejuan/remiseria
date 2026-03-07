@@ -1,9 +1,12 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../config/notificaciones.php';
 adminRedirect();
 
 $pdo = getConnection();
+$id_usuario = $_SESSION['user_id'];
+handle_notificaciones($pdo, $id_usuario);
 $message = '';
 $remiseros = $pdo->query('SELECT * FROM remiseros WHERE activo = 1 AND rol = "remisero"')->fetchAll();
 $pasajeros = $pdo->query('SELECT * FROM pasajeros ORDER BY apellido, nombre')->fetchAll();
@@ -36,6 +39,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $estado = $tipo === 'larga_distancia' ? 'buscando' : 'buscando';
             $stmt = $pdo->prepare('INSERT INTO viajes (id_remisero, id_pasajero, tipo, origen, destino, estado, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?)');
             $stmt->execute([$id_remisero, $id_pasajero, $tipo, $origen ?: '-', $destino ?: '-', $estado, $observaciones]);
+            
+            $stmt_pasajero = $pdo->prepare('SELECT nombre, apellido FROM pasajeros WHERE id = ?');
+            $stmt_pasajero->execute([$id_pasajero]);
+            $pasajero = $stmt_pasajero->fetch();
+            
+            crear_notificacion($pdo, $id_remisero, 'Nuevo viaje asignado', 'Viaje con ' . $pasajero['apellido'] . ' ' . $pasajero['nombre'], 'success');
+            
             $message = $tipo === 'larga_distancia' ? 'Viaje de larga distancia registrado. El remisero puede marcar cuando busque al pasajero.' : 'Viaje registrado. El remisero completará los datos.';
         }
     }
@@ -71,6 +81,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="text-center py-4 border-bottom border-light">
                     <i class="bi bi-car-front-fill fs-2"></i>
                     <h5 class="mt-2">Remisería</h5>
+                    <div class="mt-3">
+                        <?php render_notificaciones($pdo, $id_usuario); ?>
+                    </div>
                 </div>
                 <a href="index.php" onclick="closeSidebar()"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
                 <a href="remiseros.php" onclick="closeSidebar()"><i class="bi bi-people me-2"></i> Remiseros</a>
@@ -211,5 +224,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1,9 +1,12 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../config/notificaciones.php';
 adminRedirect();
 
 $pdo = getConnection();
+$id_usuario = $_SESSION['user_id'];
+handle_notificaciones($pdo, $id_usuario);
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -17,6 +20,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $pdo->prepare('DELETE FROM remiseros WHERE id = ?');
         $stmt->execute([$_POST['id']]);
         $message = 'Remisero eliminado';
+    } elseif ($action === 'notificar') {
+        $destinatario = $_POST['destinatario'] ?? 'todos';
+        $titulo = $_POST['titulo'] ?? 'Notificación';
+        $mensaje = $_POST['mensaje'] ?? '';
+        $tipo = $_POST['tipo'] ?? 'info';
+        
+        if ($destinatario === 'todos') {
+            $stmt = $pdo->query('SELECT id FROM remiseros WHERE rol = "remisero" AND activo = 1');
+            while ($r = $stmt->fetch()) {
+                crear_notificacion($pdo, $r['id'], $titulo, $mensaje, $tipo);
+            }
+            $message = 'Notificación enviada a todos los remiseros';
+        } else {
+            crear_notificacion($pdo, $destinatario, $titulo, $mensaje, $tipo);
+            $message = 'Notificación enviada al remisero';
+        }
     }
 }
 
@@ -54,6 +73,9 @@ $remiseros = $pdo->query('SELECT * FROM remiseros WHERE rol = "remisero" ORDER B
                 <div class="text-center py-4 border-bottom border-light">
                     <i class="bi bi-car-front-fill fs-2"></i>
                     <h5 class="mt-2">Remisería</h5>
+                    <div class="mt-3">
+                        <?php render_notificaciones($pdo, $id_usuario); ?>
+                    </div>
                 </div>
                 <a href="index.php" onclick="closeSidebar()"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
                 <a href="remiseros.php" class="active" onclick="closeSidebar()"><i class="bi bi-people me-2"></i> Remiseros</a>
@@ -74,6 +96,9 @@ $remiseros = $pdo->query('SELECT * FROM remiseros WHERE rol = "remisero" ORDER B
                     <div class="card-header">
                         <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#remiseroModal">
                             <i class="bi bi-plus-circle"></i> Nuevo
+                        </button>
+                        <button class="btn btn-info btn-sm text-white" data-bs-toggle="modal" data-bs-target="#notifModal">
+                            <i class="bi bi-bell"></i> Enviar Notificación
                         </button>
                     </div>
                     <div class="card-body">
@@ -98,6 +123,45 @@ $remiseros = $pdo->query('SELECT * FROM remiseros WHERE rol = "remisero" ORDER B
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="notifModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title"><i class="bi bi-bell"></i> Enviar Notificación</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <form method="POST">
+                    <div class="modal-body">
+                        <input type="hidden" name="action" value="notificar">
+                        <div class="mb-3">
+                            <label class="form-label">Destinatario</label>
+                            <select name="destinatario" class="form-select" id="destinatarioSelect">
+                                <option value="todos">Todos los remiseros</option>
+                                <?php foreach ($remiseros as $r): ?>
+                                <option value="<?= $r['id'] ?>"><?= htmlspecialchars($r['nombre']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Título</label>
+                            <input type="text" name="titulo" class="form-control" required placeholder="Ej: Recordatorio importante">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mensaje</label>
+                            <textarea name="mensaje" class="form-control" rows="3" required placeholder="Escribí el mensaje..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Tipo</label>
+                            <select name="tipo" class="form-select">
+                                <option value="info">Información (azul)</option>
+                                <option value="success">Éxito (verde)</option>
+                                <option value="warning">Advertencia (amarillo)</option>
+                                <option value="danger">Urgente (rojo)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary">Enviar</button></div>
+                </form>
             </div>
         </div>
     </div>

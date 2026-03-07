@@ -1,9 +1,12 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../config/notificaciones.php';
 adminRedirect();
 
 $pdo = getConnection();
+$id_usuario = $_SESSION['user_id'];
+handle_notificaciones($pdo, $id_usuario);
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -57,6 +60,9 @@ $pasajeros = $pdo->query("SELECT * FROM pasajeros ORDER BY apellido, nombre")->f
                 <div class="text-center py-4 border-bottom border-light">
                     <i class="bi bi-car-front-fill fs-2"></i>
                     <h5 class="mt-2">Remisería</h5>
+                    <div class="mt-3">
+                        <?php render_notificaciones($pdo, $id_usuario); ?>
+                    </div>
                 </div>
                 <a href="index.php" onclick="closeSidebar()"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
                 <a href="remiseros.php" onclick="closeSidebar()"><i class="bi bi-people me-2"></i> Remiseros</a>

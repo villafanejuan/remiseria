@@ -1,9 +1,12 @@
 <?php
 session_start();
 require_once '../config/database.php';
+require_once '../config/notificaciones.php';
 authRedirect();
 
 $pdo = getConnection();
+$id_usuario = $_SESSION['user_id'];
+handle_notificaciones($pdo, $id_usuario);
 $remisero_id = $_SESSION['user_id'];
 
 $where = 'v.id_remisero = ?';
@@ -30,11 +33,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nuevo_estado = $_POST['estado'];
         $stmt = $pdo->prepare('UPDATE viajes SET estado = ? WHERE id = ? AND id_remisero = ?');
         $stmt->execute([$nuevo_estado, $id_viaje, $remisero_id]);
+        
+        $stmt_viaje = $pdo->prepare('SELECT v.*, p.apellido, p.nombre FROM viajes v LEFT JOIN pasajeros p ON v.id_pasajero = p.id WHERE v.id = ?');
+        $stmt_viaje->execute([$id_viaje]);
+        $viaje = $stmt_viaje->fetch();
+        
+        $stmt_admin = $pdo->query('SELECT id FROM remiseros WHERE rol = "admin" LIMIT 1')->fetch();
+        if ($stmt_admin) {
+            $estado_msg = $nuevo_estado === 'en_curso' ? 'en curso' : ($nuevo_estado === 'cancelado' ? 'cancelado' : $nuevo_estado);
+            crear_notificacion($pdo, $stmt_admin['id'], 'Viaje actualizado', $_SESSION['nombre'] . ' marcó el viaje como ' . $estado_msg . ' (' . $viaje['apellido'] . ' ' . $viaje['nombre'] . ')', $nuevo_estado === 'cancelado' ? 'warning' : 'info');
+        }
     } elseif ($action === 'pago') {
         $monto = $_POST['monto'] ?? 0;
         $metodo = $_POST['metodo_pago'] ?? 'efectivo';
         $stmt = $pdo->prepare('UPDATE viajes SET monto = ?, metodo_pago = ?, fecha_pago = NOW(), estado = "completado" WHERE id = ? AND id_remisero = ?');
         $stmt->execute([$monto, $metodo, $id_viaje, $remisero_id]);
+        
+        $stmt_viaje = $pdo->prepare('SELECT v.*, p.apellido, p.nombre FROM viajes v LEFT JOIN pasajeros p ON v.id_pasajero = p.id WHERE v.id = ?');
+        $stmt_viaje->execute([$id_viaje]);
+        $viaje = $stmt_viaje->fetch();
+        
+        $stmt_admin = $pdo->query('SELECT id FROM remiseros WHERE rol = "admin" LIMIT 1')->fetch();
+        if ($stmt_admin) {
+            crear_notificacion($pdo, $stmt_admin['id'], 'Viaje completado', $_SESSION['nombre'] . ' completó el viaje con ' . $viaje['apellido'] . ' ' . $viaje['nombre'] . ' - $' . $monto, 'success');
+        }
     }
     header('Location: mis_viajes.php');
     exit;
@@ -64,7 +86,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="top-bar">
         <div class="container d-flex justify-content-between align-items-center">
             <div><a href="index.php" class="text-white text-decoration-none"><i class="bi bi-arrow-left"></i></a> <strong class="ms-3">Mis Viajes</strong></div>
-            <div><span class="me-3"><?= htmlspecialchars($_SESSION['nombre']) ?></span><a href="../logout.php" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right"></i></a></div>
+            <div>
+                <?php render_notificaciones($pdo, $id_usuario); ?>
+                <span class="me-3"><?= htmlspecialchars($_SESSION['nombre']) ?></span>
+                <a href="perfil.php" class="btn btn-sm btn-outline-light"><i class="bi bi-gear"></i></a>
+                <a href="../logout.php" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right"></i></a>
+            </div>
         </div>
     </div>
     <div class="container mt-4">

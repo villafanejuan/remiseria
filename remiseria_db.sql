@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 04-03-2026 a las 22:28:53
+-- Tiempo de generación: 06-03-2026 a las 03:39:00
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -35,6 +35,13 @@ CREATE TABLE `pasajeros` (
   `direccion` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `pasajeros`
+--
+
+INSERT INTO `pasajeros` (`id`, `apellido`, `nombre`, `telefono`, `direccion`, `created_at`) VALUES
+(4, 'juanjo', '', '123412', '343546', '2026-03-05 12:10:59');
 
 -- --------------------------------------------------------
 
@@ -85,6 +92,14 @@ CREATE TABLE `viajes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
+-- Volcado de datos para la tabla `viajes`
+--
+
+INSERT INTO `viajes` (`id`, `id_remisero`, `id_pasajero`, `tipo`, `origen`, `destino`, `fecha_hora_solicitado`, `fecha_hora_viaje`, `estado`, `observaciones`, `monto`, `metodo_pago`, `fecha_pago`, `created_at`) VALUES
+(9, 2, 4, 'local', 'callefalsa123', '-', '2026-03-05 09:10:59', NULL, 'completado', '', 3000.00, 'transferencia', '2026-03-05 09:15:00', '2026-03-05 12:10:59'),
+(10, 2, 4, 'local', '-', '-', '2026-03-05 10:02:07', NULL, 'buscando', '', 0.00, 'pendiente', NULL, '2026-03-05 13:02:07');
+
+--
 -- Índices para tablas volcadas
 --
 
@@ -117,7 +132,7 @@ ALTER TABLE `viajes`
 -- AUTO_INCREMENT de la tabla `pasajeros`
 --
 ALTER TABLE `pasajeros`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT de la tabla `remiseros`
@@ -129,7 +144,7 @@ ALTER TABLE `remiseros`
 -- AUTO_INCREMENT de la tabla `viajes`
 --
 ALTER TABLE `viajes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
 -- Restricciones para tablas volcadas
