@@ -1,14 +1,7 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-if (!defined('TENANT_BASE')) {
-    $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-    preg_match('#/remiseria/([^/]+)/admin#', $path, $m);
-    define('TENANT_BASE', '/remiseria/' . ($m[1] ?? 'demo'));
-}
-require_once __DIR__ . '/../config/database.php';
-require_once __DIR__ . '/../config/notificaciones.php';
+session_start();
+require_once '../config/database.php';
+require_once '../config/notificaciones.php';
 requireTenant();
 adminRedirect();
 
@@ -56,14 +49,14 @@ $remiseros = $stmt->fetchAll();
                         <?php render_notificaciones($pdo, $id_usuario); ?>
                     </div>
                 </div>
-                <a href="<?= TENANT_BASE ?>/admin/index.php" onclick="closeSidebar()"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
-                <a href="<?= TENANT_BASE ?>/admin/remiseros.php" onclick="closeSidebar()"><i class="bi bi-people me-2"></i> Remiseros</a>
-                <a href="<?= TENANT_BASE ?>/admin/pasajeros.php" onclick="closeSidebar()"><i class="bi bi-person-badge me-2"></i> Pasajeros</a>
-                <a href="<?= TENANT_BASE ?>/admin/viajes.php" onclick="closeSidebar()"><i class="bi bi-car me-2"></i> Viajes</a>
-                <a href="<?= TENANT_BASE ?>/admin/nuevo_viaje.php" onclick="closeSidebar()"><i class="bi bi-plus-circle me-2"></i> Nuevo Viaje</a>
-                <a href="<?= TENANT_BASE ?>/admin/reportes.php" class="active" onclick="closeSidebar()"><i class="bi bi-file-earmark-bar-graph me-2"></i> Reportes</a>
-                <a href="<?= TENANT_BASE ?>/admin/perfil.php" onclick="closeSidebar()"><i class="bi bi-gear me-2"></i> Perfil</a>
-                <a href="<?= TENANT_BASE ?>/logout.php" onclick="closeSidebar()"><i class="bi bi-box-arrow-right me-2"></i> Salir</a>
+                <a href="index.php" onclick="closeSidebar()"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+                <a href="remiseros.php" onclick="closeSidebar()"><i class="bi bi-people me-2"></i> Remiseros</a>
+                <a href="pasajeros.php" onclick="closeSidebar()"><i class="bi bi-person-badge me-2"></i> Pasajeros</a>
+                <a href="viajes.php" onclick="closeSidebar()"><i class="bi bi-car me-2"></i> Viajes</a>
+                <a href="nuevo_viaje.php" onclick="closeSidebar()"><i class="bi bi-plus-circle me-2"></i> Nuevo Viaje</a>
+                <a href="reportes.php" class="active" onclick="closeSidebar()"><i class="bi bi-file-earmark-bar-graph me-2"></i> Reportes</a>
+                <a href="perfil.php" onclick="closeSidebar()"><i class="bi bi-gear me-2"></i> Perfil</a>
+                <a href="../logout.php" onclick="closeSidebar()"><i class="bi bi-box-arrow-right me-2"></i> Salir</a>
             </div>
             <div class="col-md-10 p-4 main-content">
                 <button class="btn btn-primary menu-toggle mb-3" onclick="toggleSidebar()" style="display:none;"><i class="bi bi-list fs-4"></i></button>

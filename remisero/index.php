@@ -1,23 +1,30 @@
 <?php
 session_start();
-require_once '../config/database.php';
-require_once '../config/notificaciones.php';
+if (!defined('TENANT_BASE')) {
+    $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    preg_match('#/remiseria/([^/]+)/remisero#', $path, $m);
+    define('TENANT_BASE', '/remiseria/' . ($m[1] ?? 'demo'));
+}
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/notificaciones.php';
+requireTenant();
 authRedirect();
 
 $pdo = getConnection();
+$tenantId = getTenantId();
 $id_usuario = $_SESSION['user_id'];
 handle_notificaciones($pdo, $id_usuario);
 
-$stmt = $pdo->prepare('SELECT COUNT(*) as total FROM viajes WHERE id_remisero = ? AND DATE(created_at) = CURDATE()');
-$stmt->execute([$_SESSION['user_id']]);
+$stmt = $pdo->prepare('SELECT COUNT(*) as total FROM viajes WHERE id_remisero = ? AND tenant_id = ? AND DATE(created_at) = CURDATE()');
+$stmt->execute([$_SESSION['user_id'], $tenantId]);
 $viajes_hoy = $stmt->fetch()['total'];
 
-$stmt = $pdo->prepare('SELECT COUNT(*) as total FROM viajes WHERE id_remisero = ? AND estado = "buscando"');
-$stmt->execute([$_SESSION['user_id']]);
+$stmt = $pdo->prepare('SELECT COUNT(*) as total FROM viajes WHERE id_remisero = ? AND tenant_id = ? AND estado = "buscando"');
+$stmt->execute([$_SESSION['user_id'], $tenantId]);
 $buscando = $stmt->fetch()['total'];
 
-$stmt = $pdo->prepare('SELECT v.*, p.apellido, p.nombre as nombre_pasajero, p.telefono FROM viajes v LEFT JOIN pasajeros p ON v.id_pasajero = p.id WHERE v.id_remisero = ? ORDER BY v.created_at DESC LIMIT 10');
-$stmt->execute([$_SESSION['user_id']]);
+$stmt = $pdo->prepare('SELECT v.*, p.apellido, p.nombre as nombre_pasajero, p.telefono FROM viajes v LEFT JOIN pasajeros p ON v.id_pasajero = p.id WHERE v.id_remisero = ? AND v.tenant_id = ? ORDER BY v.created_at DESC LIMIT 10');
+$stmt->execute([$_SESSION['user_id'], $tenantId]);
 $mis_viajes = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -46,18 +53,18 @@ $mis_viajes = $stmt->fetchAll();
     <div class="top-bar">
         <div class="container d-flex justify-content-between align-items-center">
             <div><i class="bi bi-car-front-fill fs-4 me-2"></i> <strong>Remisería</strong></div>
-<div>
+            <div>
                 <?php render_notificaciones($pdo, $id_usuario); ?>
                 <span class="me-3"><?= htmlspecialchars($_SESSION['nombre']) ?></span>
-                <a href="perfil.php" class="btn btn-sm btn-outline-light"><i class="bi bi-gear"></i></a>
-                <a href="../logout.php" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right"></i></a>
+                <a href="<?= TENANT_BASE ?>/remisero/perfil.php" class="btn btn-sm btn-outline-light"><i class="bi bi-gear"></i></a>
+                <a href="<?= TENANT_BASE ?>/logout.php" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right"></i></a>
             </div>
         </div>
     </div>
     <div class="container mt-4">
         <div class="row mb-4">
             <div class="col-md-4">
-                <a href="buscar.php" class="text-decoration-none">
+                <a href="<?= TENANT_BASE ?>/remisero/buscar.php" class="text-decoration-none">
                     <div class="card stat-card p-4 text-center">
                         <i class="bi bi-car-front fs-1 text-primary"></i>
                         <h5 class="mt-2">Nuevo Viaje</h5>
@@ -65,7 +72,7 @@ $mis_viajes = $stmt->fetchAll();
                 </a>
             </div>
             <div class="col-md-4">
-                <a href="mis_viajes.php" class="text-decoration-none">
+                <a href="<?= TENANT_BASE ?>/remisero/mis_viajes.php" class="text-decoration-none">
                     <div class="card stat-card p-4 text-center">
                         <i class="bi bi-plus-circle fs-1 text-success"></i>
                         <h5 class="mt-2">Nuevo Viaje</h5>
@@ -73,7 +80,7 @@ $mis_viajes = $stmt->fetchAll();
                 </a>
             </div>
             <div class="col-md-4">
-                <a href="mis_viajes.php" class="text-decoration-none">
+                <a href="<?= TENANT_BASE ?>/remisero/mis_viajes.php" class="text-decoration-none">
                     <div class="card stat-card p-4 text-center">
                         <i class="bi bi-list-check fs-1 text-warning"></i>
                         <h5 class="mt-2">Mis Viajes</h5>

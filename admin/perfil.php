@@ -1,36 +1,62 @@
 <?php
-session_start();
-require_once '../config/database.php';
-require_once '../config/notificaciones.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+if (!defined('TENANT_BASE')) {
+    $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    preg_match('#/remiseria/([^/]+)/admin#', $path, $m);
+    define('TENANT_BASE', '/remiseria/' . ($m[1] ?? 'demo'));
+}
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/notificaciones.php';
+requireTenant();
 adminRedirect();
 
 $pdo = getConnection();
+$tenantId = getTenantId();
 $id_usuario = $_SESSION['user_id'];
 handle_notificaciones($pdo, $id_usuario);
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $current = $_POST['current_password'] ?? '';
-    $new = $_POST['new_password'] ?? '';
-    $confirm = $_POST['confirm_password'] ?? '';
-    
-    $stmt = $pdo->prepare('SELECT password FROM remiseros WHERE id = ?');
-    $stmt->execute([$_SESSION['user_id']]);
-    $user = $stmt->fetch();
-    
-    if (!password_verify($current, $user['password'])) {
-        $message = 'La contraseña actual es incorrecta';
-    } elseif ($new !== $confirm) {
-        $message = 'Las contraseñas nuevas no coinciden';
-    } elseif (strlen($new) < 4) {
-        $message = 'La contraseña debe tener al menos 4 caracteres';
+    if (isset($_POST['actualizar_datos'])) {
+        $nombre = trim($_POST['nombre'] ?? '');
+        $username = trim($_POST['username'] ?? '');
+        
+        if ($nombre && $username) {
+            $stmt = $pdo->prepare('UPDATE remiseros SET nombre = ?, username = ? WHERE id = ? AND tenant_id = ?');
+            $stmt->execute([$nombre, $username, $_SESSION['user_id'], $tenantId]);
+            $_SESSION['nombre'] = $nombre;
+            $_SESSION['username'] = $username;
+            $message = 'Datos actualizados exitosamente';
+        }
     } else {
-        $hash = password_hash($new, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare('UPDATE remiseRos SET password = ? WHERE id = ?');
-        $stmt->execute([$hash, $_SESSION['user_id']]);
-        $message = 'Contraseña actualizada exitosamente';
+        $current = $_POST['current_password'] ?? '';
+        $new = $_POST['new_password'] ?? '';
+        $confirm = $_POST['confirm_password'] ?? '';
+        
+        $stmt = $pdo->prepare('SELECT password FROM remiseros WHERE id = ? AND tenant_id = ?');
+        $stmt->execute([$_SESSION['user_id'], $tenantId]);
+        $user = $stmt->fetch();
+        
+        if (!password_verify($current, $user['password'])) {
+            $message = 'La contraseña actual es incorrecta';
+        } elseif ($new !== $confirm) {
+            $message = 'Las contraseñas nuevas no coinciden';
+        } elseif (strlen($new) < 4) {
+            $message = 'La contraseña debe tener al menos 4 caracteres';
+        } else {
+            $hash = password_hash($new, PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare('UPDATE remiseros SET password = ? WHERE id = ?');
+            $stmt->execute([$hash, $_SESSION['user_id']]);
+            $message = 'Contraseña actualizada exitosamente';
+        }
     }
 }
+
+$stmt = $pdo->prepare('SELECT * FROM remiseros WHERE id = ? AND tenant_id = ?');
+$stmt->execute([$_SESSION['user_id'], $tenantId]);
+$currentUser = $stmt->fetch();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -67,32 +93,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <?php render_notificaciones($pdo, $id_usuario); ?>
                     </div>
                 </div>
-                <a href="index.php" onclick="closeSidebar()"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
-                <a href="remiseros.php" onclick="closeSidebar()"><i class="bi bi-people me-2"></i> Remiseros</a>
-                <a href="pasajeros.php" onclick="closeSidebar()"><i class="bi bi-person-badge me-2"></i> Pasajeros</a>
-                <a href="viajes.php" onclick="closeSidebar()"><i class="bi bi-car me-2"></i> Viajes</a>
-                <a href="nuevo_viaje.php" onclick="closeSidebar()"><i class="bi bi-plus-circle me-2"></i> Nuevo Viaje</a>
-                <a href="reportes.php" onclick="closeSidebar()"><i class="bi bi-file-earmark-bar-graph me-2"></i> Reportes</a>
-                <a href="perfil.php" class="active" onclick="closeSidebar()"><i class="bi bi-gear me-2"></i> Perfil</a>
-                <a href="../logout.php" onclick="closeSidebar()"><i class="bi bi-box-arrow-right me-2"></i> Salir</a>
+                <a href="<?= TENANT_BASE ?>/admin/index.php" onclick="closeSidebar()"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+                <a href="<?= TENANT_BASE ?>/admin/remiseros.php" onclick="closeSidebar()"><i class="bi bi-people me-2"></i> Remiseros</a>
+                <a href="<?= TENANT_BASE ?>/admin/pasajeros.php" onclick="closeSidebar()"><i class="bi bi-person-badge me-2"></i> Pasajeros</a>
+                <a href="<?= TENANT_BASE ?>/admin/viajes.php" onclick="closeSidebar()"><i class="bi bi-car me-2"></i> Viajes</a>
+                <a href="<?= TENANT_BASE ?>/admin/nuevo_viaje.php" onclick="closeSidebar()"><i class="bi bi-plus-circle me-2"></i> Nuevo Viaje</a>
+                <a href="<?= TENANT_BASE ?>/admin/reportes.php" onclick="closeSidebar()"><i class="bi bi-file-earmark-bar-graph me-2"></i> Reportes</a>
+                <a href="<?= TENANT_BASE ?>/admin/perfil.php" class="active" onclick="closeSidebar()"><i class="bi bi-gear me-2"></i> Perfil</a>
+                <a href="<?= TENANT_BASE ?>/logout.php" onclick="closeSidebar()"><i class="bi bi-box-arrow-right me-2"></i> Salir</a>
             </div>
             <div class="col-md-10 p-4 main-content">
                 <button class="btn btn-primary menu-toggle mb-3" onclick="toggleSidebar()" style="display:none;"><i class="bi bi-list fs-4"></i></button>
-                <h2 class="mb-4">Cambiar Contraseña</h2>
+                
                 <?php if ($message): ?>
                     <div class="alert alert-<?= strpos($message, 'incorrecta') !== false || strpos($message, 'no coinciden') !== false ? 'danger' : 'success' ?>"><?= htmlspecialchars($message) ?></div>
                 <?php endif; ?>
-                <div class="card" style="max-width: 500px;">
+
+                <div class="card mb-4" style="max-width: 500px;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Mis Datos</h5>
+                    </div>
                     <div class="card-body">
                         <form method="POST">
-                            <div class="mb-3">
-                                <label class="form-label">Usuario</label>
-                                <input type="text" class="form-control" value="<?= htmlspecialchars($_SESSION['username']) ?>" disabled>
-                            </div>
+                            <input type="hidden" name="actualizar_datos" value="1">
                             <div class="mb-3">
                                 <label class="form-label">Nombre</label>
-                                <input type="text" class="form-control" value="<?= htmlspecialchars($_SESSION['nombre']) ?>" disabled>
+                                <input type="text" name="nombre" class="form-control" value="<?= htmlspecialchars($currentUser['nombre']) ?>" required>
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label">Usuario</label>
+                                <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($currentUser['username']) ?>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" class="form-control" value="<?= htmlspecialchars($currentUser['telefono'] ?? '') ?>" disabled>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Actualizar Datos</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card" style="max-width: 500px;">
+                    <div class="card-header">
+                        <h5 class="mb-0">Cambiar Contraseña</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST">
                             <div class="mb-3">
                                 <label class="form-label">Contraseña Actual</label>
                                 <input type="password" name="current_password" class="form-control" required>
@@ -102,10 +148,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="password" name="new_password" class="form-control" required>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Confirmar Nueva Contraseña</label>
+                                <label class="form-label">Confirmar Contraseña</label>
                                 <input type="password" name="confirm_password" class="form-control" required>
                             </div>
-                            <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
+                            <button type="submit" class="btn btn-warning">Cambiar Contraseña</button>
                         </form>
                     </div>
                 </div>

@@ -4,11 +4,10 @@ ini_set('display_errors', 1);
 
 $requestUri = $_SERVER['REQUEST_URI'];
 $path = trim(parse_url($requestUri, PHP_URL_PATH), '/');
-$path = preg_replace('#^remiseria/?#', '', $path);
 $segments = explode('/', $path);
 $baseUrl = '/remiseria';
 
-if ($path === '') {
+if ($path === '' || $path === 'remiseria' || $path === 'remiseria/') {
     session_start();
     
     require_once __DIR__ . '/config/database.php';
@@ -28,7 +27,7 @@ if ($path === '') {
             if ($admin && password_verify($password, $admin['password'])) {
                 $_SESSION['super_admin'] = true;
                 $_SESSION['super_admin_id'] = $admin['id'];
-                header('Location: /remiseria/superadmin/');;
+                echo '<script>window.location.href = "/remiseria/superadmin/"</script>';
                 exit;
             }
             
@@ -53,11 +52,9 @@ if ($path === '') {
                 ];
                 
                 if ($user['rol'] === 'admin') {
-                    header('Location: /remiseria/' . $user['tenant_slug'] . '/admin');
-                    exit;
+                    echo '<script>window.location.href = "/remiseria/' . $user['tenant_slug'] . '/admin"</script>';
                 } else {
-                    header('Location: /remiseria/' . $user['tenant_slug'] . '/remisero');
-                    exit;
+                    echo '<script>window.location.href = "/remiseria/' . $user['tenant_slug'] . '/remisero"</script>';
                 }
                 exit;
             } else {
@@ -112,7 +109,7 @@ if ($path === '') {
 if (isset($segments[0]) && $segments[0] === 'logout') {
     session_start();
     session_destroy();
-    header('Location: /remiseria/');
+    echo '<script>window.location.href = "/remiseria/"</script>';
     exit;
 }
 
@@ -124,7 +121,7 @@ if (isset($segments[0]) && $segments[0] === 'setup') {
 if (isset($segments[0]) && $segments[0] === 'superadmin') {
     session_start();
     if (!isset($_SESSION['super_admin'])) {
-        header('Location: /remiseria/');
+        echo '<script>window.location.href = "/remiseria/"</script>';
         exit;
     }
     require_once __DIR__ . '/superadmin/index.php';
@@ -136,11 +133,10 @@ if (isset($segments[1]) && $segments[1] === 'admin') {
     session_start();
     
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['tenant_data']) || $_SESSION['tenant_data']['slug'] !== $slug) {
-        header('Location: /remiseria/' . $slug . '/login');
+        echo '<script>window.location.href = "/remiseria/' . $slug . '/login"</script>';
         exit;
     }
     
-    define('TENANT_BASE', '/remiseria/' . $slug);
     require_once __DIR__ . '/admin/index.php';
     exit;
 }
@@ -150,11 +146,10 @@ if (isset($segments[1]) && $segments[1] === 'remisero') {
     session_start();
     
     if (!isset($_SESSION['user_id']) || !isset($_SESSION['tenant_data']) || $_SESSION['tenant_data']['slug'] !== $slug) {
-        header('Location: /remiseria/' . $slug . '/login');
+        echo '<script>window.location.href = "/remiseria/' . $slug . '/login"</script>';
         exit;
     }
     
-    define('TENANT_BASE', '/remiseria/' . $slug);
     require_once __DIR__ . '/remisero/index.php';
     exit;
 }
@@ -171,7 +166,7 @@ if (isset($segments[1]) && $segments[1] === 'login') {
     $tenant = $stmt->fetch();
     
     if (!$tenant) {
-        header('Location: /remiseria/');
+        echo '<script>window.location.href = "/remiseria/"</script>';
         exit;
     }
     
@@ -204,11 +199,9 @@ if (isset($segments[1]) && $segments[1] === 'login') {
                 ];
                 
                 if ($user['rol'] === 'admin') {
-                    header('Location: /remiseria/' . $slug . '/admin');
-                    exit;
+                    echo '<script>window.location.href = "/remiseria/' . $slug . '/admin"</script>';
                 } else {
-                    header('Location: /remiseria/' . $slug . '/remisero');
-                    exit;
+                    echo '<script>window.location.href = "/remiseria/' . $slug . '/remisero"</script>';
                 }
                 exit;
             } else {
@@ -263,5 +256,5 @@ if (isset($segments[1]) && $segments[1] === 'login') {
     exit;
 }
 
-header('Location: /remiseria/');
+echo '<script>window.location.href = "/remiseria/"</script>';
 exit;

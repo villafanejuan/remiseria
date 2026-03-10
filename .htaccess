@@ -1,0 +1,14 @@
+RewriteEngine On
+RewriteBase /remiseria/
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteRule ^([^/]+)/admin/?$ admin/index.php?slug=$1 [L,QSA]
+RewriteRule ^([^/]+)/admin/(.+)$ admin/$2?slug=$1 [L,QSA]
+RewriteRule ^([^/]+)/remisero/?$ remisero/index.php?slug=$1 [L,QSA]
+RewriteRule ^([^/]+)/remisero/(.+)$ remisero/$2?slug=$1 [L,QSA]
+
+RewriteCond %{REQUEST_URI} !^/remiseria/(admin|remisero|superadmin|config|libraries|test)/ [NC]
+RewriteRule ^(.*)$ index.php [L]

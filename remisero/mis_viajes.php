@@ -1,16 +1,23 @@
 <?php
 session_start();
-require_once '../config/database.php';
-require_once '../config/notificaciones.php';
+if (!defined('TENANT_BASE')) {
+    $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+    preg_match('#/remiseria/([^/]+)/remisero#', $path, $m);
+    define('TENANT_BASE', '/remiseria/' . ($m[1] ?? 'demo'));
+}
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/notificaciones.php';
+requireTenant();
 authRedirect();
 
 $pdo = getConnection();
+$tenantId = getTenantId();
 $id_usuario = $_SESSION['user_id'];
 handle_notificaciones($pdo, $id_usuario);
 $remisero_id = $_SESSION['user_id'];
 
-$where = 'v.id_remisero = ?';
-$params = [$remisero_id];
+$where = 'v.id_remisero = ? AND v.tenant_id = ?';
+$params = [$remisero_id, $tenantId];
 
 if (!empty($_GET['fecha'])) {
     $where .= ' AND DATE(v.created_at) = ?';
@@ -58,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             crear_notificacion($pdo, $stmt_admin['id'], 'Viaje completado', $_SESSION['nombre'] . ' completó el viaje con ' . $viaje['apellido'] . ' ' . $viaje['nombre'] . ' - $' . $monto, 'success');
         }
     }
-    header('Location: mis_viajes.php');
+    header('Location: ' . TENANT_BASE . '/remisero/mis_viajes.php');
     exit;
 }
 ?>
@@ -85,12 +92,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="top-bar">
         <div class="container d-flex justify-content-between align-items-center">
-            <div><a href="index.php" class="text-white text-decoration-none"><i class="bi bi-arrow-left"></i></a> <strong class="ms-3">Mis Viajes</strong></div>
+            <div><a href="<?= TENANT_BASE ?>/remisero/index.php" class="text-white text-decoration-none"><i class="bi bi-arrow-left"></i></a> <strong class="ms-3">Mis Viajes</strong></div>
             <div>
                 <?php render_notificaciones($pdo, $id_usuario); ?>
                 <span class="me-3"><?= htmlspecialchars($_SESSION['nombre']) ?></span>
-                <a href="perfil.php" class="btn btn-sm btn-outline-light"><i class="bi bi-gear"></i></a>
-                <a href="../logout.php" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right"></i></a>
+                <a href="<?= TENANT_BASE ?>/remisero/perfil.php" class="btn btn-sm btn-outline-light"><i class="bi bi-gear"></i></a>
+                <a href="<?= TENANT_BASE ?>/logout.php" class="btn btn-sm btn-outline-light"><i class="bi bi-box-arrow-right"></i></a>
             </div>
         </div>
     </div>
