@@ -17,27 +17,44 @@ handle_notificaciones($pdo, $id_usuario);
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $current = $_POST['current_password'] ?? '';
-    $new = $_POST['new_password'] ?? '';
-    $confirm = $_POST['confirm_password'] ?? '';
-    
-    $stmt = $pdo->prepare('SELECT password FROM remiseros WHERE id = ? AND tenant_id = ?');
-    $stmt->execute([$_SESSION['user_id'], $tenantId]);
-    $user = $stmt->fetch();
-    
-    if (!password_verify($current, $user['password'])) {
-        $message = 'La contraseña actual es incorrecta';
-    } elseif ($new !== $confirm) {
-        $message = 'Las contraseñas nuevas no coinciden';
-    } elseif (strlen($new) < 4) {
-        $message = 'La contraseña debe tener al menos 4 caracteres';
+    if (isset($_POST['actualizar_datos'])) {
+        $nombre = trim($_POST['nombre'] ?? '');
+        $username = trim($_POST['username'] ?? '');
+        
+        if ($nombre && $username) {
+            $stmt = $pdo->prepare('UPDATE remiseros SET nombre = ?, username = ? WHERE id = ? AND tenant_id = ?');
+            $stmt->execute([$nombre, $username, $_SESSION['user_id'], $tenantId]);
+            $_SESSION['nombre'] = $nombre;
+            $_SESSION['username'] = $username;
+            $message = 'Datos actualizados exitosamente';
+        }
     } else {
-        $hash = password_hash($new, PASSWORD_DEFAULT);
-        $stmt = $pdo->prepare('UPDATE remiseros SET password = ? WHERE id = ?');
-        $stmt->execute([$hash, $_SESSION['user_id']]);
-        $message = 'Contraseña actualizada exitosamente';
+        $current = $_POST['current_password'] ?? '';
+        $new = $_POST['new_password'] ?? '';
+        $confirm = $_POST['confirm_password'] ?? '';
+        
+        $stmt = $pdo->prepare('SELECT password FROM remiseros WHERE id = ? AND tenant_id = ?');
+        $stmt->execute([$_SESSION['user_id'], $tenantId]);
+        $user = $stmt->fetch();
+        
+        if (!password_verify($current, $user['password'])) {
+            $message = 'La contraseña actual es incorrecta';
+        } elseif ($new !== $confirm) {
+            $message = 'Las contraseñas nuevas no coinciden';
+        } elseif (strlen($new) < 4) {
+            $message = 'La contraseña debe tener al menos 4 caracteres';
+        } else {
+            $hash = password_hash($new, PASSWORD_DEFAULT);
+            $stmt = $pdo->prepare('UPDATE remiseros SET password = ? WHERE id = ?');
+            $stmt->execute([$hash, $_SESSION['user_id']]);
+            $message = 'Contraseña actualizada exitosamente';
+        }
     }
 }
+
+$stmt = $pdo->prepare('SELECT * FROM remiseros WHERE id = ? AND tenant_id = ?');
+$stmt->execute([$_SESSION['user_id'], $tenantId]);
+$currentUser = $stmt->fetch();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -71,19 +88,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($message): ?>
             <div class="alert alert-<?= strpos($message, 'incorrecta') !== false || strpos($message, 'no coinciden') !== false ? 'danger' : 'success' ?>"><?= htmlspecialchars($message) ?></div>
         <?php endif; ?>
-        <div class="card" style="max-width: 500px;">
+
+        <div class="card mb-4" style="max-width: 500px;">
+            <div class="card-header">
+                <h5 class="mb-0">Mis Datos</h5>
+            </div>
             <div class="card-body">
                 <form method="POST">
-                    <div class="mb-3">
-                        <label class="form-label">Usuario</label>
-                        <input type="text" class="form-control" value="<?= htmlspecialchars($_SESSION['username']) ?>" disabled>
-                    </div>
+                    <input type="hidden" name="actualizar_datos" value="1">
                     <div class="mb-3">
                         <label class="form-label">Nombre</label>
-                        <input type="text" class="form-control" value="<?= htmlspecialchars($_SESSION['nombre']) ?>" disabled>
+                        <input type="text" name="nombre" class="form-control" value="<?= htmlspecialchars($currentUser['nombre']) ?>" required>
                     </div>
-                    <hr>
-                    <h5>Cambiar Contraseña</h5>
+                    <div class="mb-3">
+                        <label class="form-label">Usuario</label>
+                        <input type="text" name="username" class="form-control" value="<?= htmlspecialchars($currentUser['username']) ?>" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Actualizar Datos</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card" style="max-width: 500px;">
+            <div class="card-header">
+                <h5 class="mb-0">Cambiar Contraseña</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
                     <div class="mb-3">
                         <label class="form-label">Contraseña Actual</label>
                         <input type="password" name="current_password" class="form-control" required>
@@ -97,7 +128,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="password" name="confirm_password" class="form-control" required>
                     </div>
                     <button type="submit" class="btn btn-primary">Cambiar Contraseña</button>
-                    <a href="<?= TENANT_BASE ?>/remisero/index.php" class="btn btn-secondary ms-2">Volver</a>
                 </form>
             </div>
         </div>

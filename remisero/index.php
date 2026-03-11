@@ -75,15 +75,15 @@ $mis_viajes = $stmt->fetchAll();
                 <a href="<?= TENANT_BASE ?>/remisero/mis_viajes.php" class="text-decoration-none">
                     <div class="card stat-card p-4 text-center">
                         <i class="bi bi-plus-circle fs-1 text-success"></i>
-                        <h5 class="mt-2">Nuevo Viaje</h5>
+                        <h5 class="mt-2">Mis Viajes</h5>
                     </div>
                 </a>
             </div>
             <div class="col-md-4">
-                <a href="<?= TENANT_BASE ?>/remisero/mis_viajes.php" class="text-decoration-none">
+                <a href="<?= TENANT_BASE ?>/remisero/mis_viajes.php?estado=buscando" class="text-decoration-none">
                     <div class="card stat-card p-4 text-center">
-                        <i class="bi bi-list-check fs-1 text-warning"></i>
-                        <h5 class="mt-2">Mis Viajes</h5>
+                        <i class="bi bi-search fs-1 text-warning"></i>
+                        <h5 class="mt-2">Viajes Activos</h5>
                     </div>
                 </a>
             </div>

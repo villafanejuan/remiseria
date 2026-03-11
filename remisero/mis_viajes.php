@@ -68,13 +68,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Location: ' . TENANT_BASE . '/remisero/mis_viajes.php');
     exit;
 }
+$estado_filter = $_GET['estado'] ?? '';
+$titulo_pagina = 'Mis Viajes';
+if ($estado_filter === 'buscando') $titulo_pagina = 'Viajes Activos';
+elseif ($estado_filter === 'en_curso') $titulo_pagina = 'Viajes en Curso';
+elseif ($estado_filter === 'completado') $titulo_pagina = 'Viajes Completados';
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Viajes - Remisería</title>
+    <title><?= $titulo_pagina ?> - Remisería</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <style>
@@ -92,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="top-bar">
         <div class="container d-flex justify-content-between align-items-center">
-            <div><a href="<?= TENANT_BASE ?>/remisero/index.php" class="text-white text-decoration-none"><i class="bi bi-arrow-left"></i></a> <strong class="ms-3">Mis Viajes</strong></div>
+            <div><a href="<?= TENANT_BASE ?>/remisero/index.php" class="text-white text-decoration-none"><i class="bi bi-arrow-left"></i></a> <strong class="ms-3"><?= $titulo_pagina ?></strong></div>
             <div>
                 <?php render_notificaciones($pdo, $id_usuario); ?>
                 <span class="me-3"><?= htmlspecialchars($_SESSION['nombre']) ?></span>
