@@ -47,13 +47,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $origen = $_POST['origen'] ?? '';
         $destino = $_POST['destino'] ?? '';
         $observaciones = $_POST['observaciones'] ?? '';
+        $hora = $_POST['hora'] ?? null;
         
         if ($tipo === 'larga_distancia' && (empty($origen) || empty($destino))) {
             $message = 'Para larga distancia, origen y destino son obligatorios';
         } else {
             $estado = $tipo === 'larga_distancia' ? 'buscando' : 'buscando';
-            $stmt = $pdo->prepare('INSERT INTO viajes (tenant_id, id_remisero, id_pasajero, tipo, origen, destino, estado, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-            $stmt->execute([$tenantId, $id_remisero, $id_pasajero, $tipo, $origen ?: '-', $destino ?: '-', $estado, $observaciones]);
+            $stmt = $pdo->prepare('INSERT INTO viajes (tenant_id, id_remisero, id_pasajero, tipo, origen, destino, estado, observaciones, hora) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+            $stmt->execute([$tenantId, $id_remisero, $id_pasajero, $tipo, $origen ?: '-', $destino ?: '-', $estado, $observaciones, $hora]);
             
             $stmt_pasajero = $pdo->prepare('SELECT nombre, apellido FROM pasajeros WHERE id = ?');
             $stmt_pasajero->execute([$id_pasajero]);
@@ -161,6 +162,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">Dirección</label>
                                     <input type="text" name="direccion" class="form-control">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Hora</label>
+                                    <input type="time" name="hora" class="form-control">
                                 </div>
                             </div>
                         </div>

@@ -38,8 +38,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$id_pasajero) {
         $message = 'Debe seleccionar o crear un pasajero';
     } else {
-        $stmt = $pdo->prepare('INSERT INTO viajes (id_remisero, id_pasajero, tipo, origen, destino, estado) VALUES (?, ?, "local", "-", "-", "buscando")');
-        $stmt->execute([$remisero_id, $id_pasajero]);
+        $hora = $_POST['hora'] ?? null;
+        $stmt = $pdo->prepare('INSERT INTO viajes (id_remisero, id_pasajero, tipo, origen, destino, estado, hora) VALUES (?, ?, "local", "-", "-", "buscando", ?)');
+        $stmt->execute([$remisero_id, $id_pasajero, $hora]);
         
         $stmt_pasajero = $pdo->prepare('SELECT nombre, apellido FROM pasajeros WHERE id = ?');
         $stmt_pasajero->execute([$id_pasajero]);
@@ -121,6 +122,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Dirección</label>
                             <input type="text" name="direccion" class="form-control">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Hora</label>
+                            <input type="time" name="hora" class="form-control">
                         </div>
                     </div>
                 </div>
